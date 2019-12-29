@@ -18,7 +18,7 @@
     navigator.serviceWorker.register('sw.js')
     .then(function(registartion){
     //注册成功
-      alert('支持sw:',registartion.scope)
+      console.log('支持sw:',registartion.scope)
     }).catch(function (err){
       console.log('fail')
     });
