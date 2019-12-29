@@ -1,0 +1,22 @@
+{
+  "name": "一个PWA示例",	//显示名称
+  "short_name": "PWA示例",  //在APP launcher和新的tab页面显示，如果没有设置，默认使用name
+  "description": "The app that helps you understand PWA",  //用于描述应用
+  "start_url": "/index.html",  // 应用启动时的URL
+  "display": "standalone", // 定义开发人员对Web应用程序的首选显示模式
+  // 有standalone、fullscreen、minimal-ui、browser
+  // 详见https://developer.mozilla.org/en-US/docs/Web/Manifest
+  "background_color": "#fff",
+  "theme_color": "#3eaf7c",
+  "icons": [    // 桌面图标，是一个数组
+    {
+      "src": "/test.jpg",
+      "sizes": "48x48",
+      "type": "image/png"
+    },
+    {
+      "src": "/youhun.ico",
+      "sizes": "48x48"
+    }
+  ]
+}
