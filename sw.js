@@ -1,18 +1,18 @@
 var cacheStorageKey = 'minimal-pwa-8'
 var cacheList=[
-  '/',
   'index.html',
   'main.css',
   'test.jpg',
   'mainifest.json'
-]
+];
 self.addEventListener('install',e =>{  // install 事件，它发生在浏览器安装并注册 Service Worker 时
   // e.waitUtil 用于在安装成功之前执行一些预装逻辑
   console.log('installed')
-  console.log('caches', caches);
   e.waitUntil(
     caches.open(cacheStorageKey)
-    .then(cache => console.log(cache))
+    .then(cache => {
+      cache.addAll(cacheList);
+    })
     .then(() => self.skipWaiting())
   )
 })
