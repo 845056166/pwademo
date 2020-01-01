@@ -12,7 +12,7 @@ self.addEventListener('install',e =>{  // install 事件，它发生在浏览器
   console.log('caches', caches);
   e.waitUntil(
     caches.open(cacheStorageKey)
-    .then(cache => cache.addAll(cacheList))
+    .then(cache => console.log(cache))
     .then(() => self.skipWaiting())
   )
 })
