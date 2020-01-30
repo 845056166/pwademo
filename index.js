@@ -1,4 +1,4 @@
-const host = 'http://huidoo.com.cn:8899';
+const host = 'https://huidoo.com.cn:8899';
 const api = 'news';
 window.getNews = () => new Promise((resolve, reject) => {
 fetch(`${host}/${api}`).then(response => response.json())
