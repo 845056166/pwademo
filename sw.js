@@ -18,14 +18,31 @@ self.addEventListener('install',e =>{  // install 事件，它发生在浏览器
 })
 self.addEventListener('fetch',function(e){
   console.log('请求的资源', e.request);
-  e.respondWith(
-    caches.match(e.request).then(function(response){
-      if(response != null){
-        return response
-      }
-      return fetch(e.request.url)
-    })
-  )
+  if(e.request.url.endsWith('news')) {
+    console.log('拦截到请求的接口');
+    e.respondWith(
+      new Promise(() => {
+        return {
+          title: 'pwa api cache',
+          list: [
+            { title: '黑恶化' },
+            { title: '呵呵' },
+            { title: '呼呼' },
+            { title: '哼哼' }
+          ]
+        };
+      })
+    )
+  } else {
+    e.respondWith(
+      caches.match(e.request).then(function(response){
+        if(response != null){
+          return response
+        }
+        return fetch(e.request.url)
+      })
+    )
+  }
 })
 self.addEventListener('activated',function(e){
   console.log('activated');
