@@ -7,11 +7,18 @@
   <link rel="stylesheet" href="main.css">
   <link rel="manifest" href="mainifest.json">
   <link rel="icon" href="icon.png" type="image/png" />
+  <script type="text/javascript" src="https://unpkg.com/vue"></script>
 </head>
 <body>
-  <h3>Hello PWA</h3>
-  <img src="test.jpg" alt="">
+  <div id="app">
+    <h3>{{title}}</h3>
+    <img src="test.jpg" alt="">
+    <ul>
+      <li v-for="(item,index) in list" :key="index">{{item.title}}</li>
+    </ul>
+  </div>
 </body>
+<script src="./index.js"></script>
 <script>
   // 检测浏览器是否支持SW
   if(navigator.serviceWorker != null){
@@ -23,5 +30,22 @@
       console.log('fail')
     });
   }
+</script>
+<script>
+  new Vue({
+    el: '#app',
+    data: {
+      title: 'Hello',
+      list: [],
+    },
+    mounted() {
+      getNews().then((res) => {
+        const { title, list } = res.data;
+        this.title = title;
+        this.list = list;
+      })
+    }
+  })
+  
 </script>
 </html>

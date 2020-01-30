@@ -17,7 +17,7 @@ self.addEventListener('install',e =>{  // install 事件，它发生在浏览器
   )
 })
 self.addEventListener('fetch',function(e){
-  console.log('sth fetched');
+  console.log('请求的资源', e.request);
   e.respondWith(
     caches.match(e.request).then(function(response){
       if(response != null){
