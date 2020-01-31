@@ -33,8 +33,8 @@ self.addEventListener('install',e => {  // install 事件，它发生在浏览�
 // on install 的优点是第二次访问即可离线，缺点是需要将需要缓存的 URL 在编译时插入到脚本中，增加代码量和降低可维护性；
 // on fetch 的优点是无需更改编译过程，也不会产生额外的流量，缺点是需要多一次访问才能离线可用。
 // 第一次并不会走这里,不会fetch ，只有安装成功后才能拦截fetch
-self.addEventListener('fetch',function(e){ // 动态资源缓存
-  console.log('请求的资源', e.request);
+self.addEventListener('fetch',function(event){ // 动态资源缓存
+  console.log('请求的资源', event.request);
   // if(e.request.url.endsWith('news')) { // 专门拦截接口
   //   console.log('拦截到请求的接口');
   //   e.respondWith(
@@ -69,7 +69,7 @@ self.addEventListener('fetch',function(e){ // 动态资源缓存
       }
 
       // 如果 service worker 没有返回，那就得直接请求真实远程服务
-      var request = e.request.clone(); // 把原始请求拷过来
+      var request = event.request.clone(); // 把原始请求拷过来
       return fetch(request).then(function (httpRes) {
 
           // http请求的返回已被抓到，可以处置了。
@@ -82,7 +82,7 @@ self.addEventListener('fetch',function(e){ // 动态资源缓存
           // 请求成功的话，将请求缓存起来。
           var responseClone = httpRes.clone();
           caches.open(cacheStorageKey).then(function (cache) {
-              cache.put(e.request, responseClone);
+              cache.put(event.request, responseClone);
           });
 
           return httpRes;
@@ -90,6 +90,7 @@ self.addEventListener('fetch',function(e){ // 动态资源缓存
     })
   // }
 })
+// pwa 激活
 self.addEventListener('activate',function(e){
   console.log('activated');
   e.waitUntil(
