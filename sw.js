@@ -91,8 +91,8 @@ self.addEventListener('fetch',function(event){ // 动态资源缓存
   // }
 })
 // pwa 激活
-self.addEventListener('activated',function(e){
-  console.log('activated');
+self.addEventListener('activate',function(e){
+  console.log('activate');
   console.log(caches.keys());
   e.waitUntil(
     //获取所有cache名称
