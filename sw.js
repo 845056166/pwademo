@@ -76,13 +76,13 @@ self.addEventListener('fetch',function(event){ // 动态资源缓存
 
           // 请求失败了，直接返回失败的结果就好了。。
           if (!httpRes || httpRes.status !== 200) {
-              return httpRes;
+            return httpRes;
           }
 
           // 请求成功的话，将请求缓存起来。
           var responseClone = httpRes.clone();
           caches.open(cacheStorageKey).then(function (cache) {
-              cache.put(event.request, responseClone);
+            cache.put(event.request, responseClone);
           });
 
           return httpRes;
@@ -91,21 +91,22 @@ self.addEventListener('fetch',function(event){ // 动态资源缓存
   // }
 })
 // pwa 激活
-self.addEventListener('activate',function(e){
+self.addEventListener('activated',function(e){
   console.log('activated');
-  e.waitUntil(
-    //获取所有cache名称
-    caches.keys().then(cacheNames => {
-      return Promise.all(
-        // 获取所有不同于当前版本名称cache下的内容
-        cacheNames.filter(cacheNames => {
-          return cacheNames !== cacheStorageKey
-        }).map(cacheNames => {
-          return caches.delete(cacheNames)
-        })
-      )
-    }).then(() => {
-      return self.clients.claim()
-    })
-  )
+  console.log(caches.keys());
+  // e.waitUntil(
+  //   //获取所有cache名称
+  //   caches.keys().then(cacheNames => {
+  //     return Promise.all(
+  //       // 获取所有不同于当前版本名称cache下的内容
+  //       cacheNames.filter(cacheNames => {
+  //         return cacheNames !== cacheStorageKey
+  //       }).map(cacheNames => {
+  //         return caches.delete(cacheNames)
+  //       })
+  //     )
+  //   }).then(() => {
+  //     return self.clients.claim()
+  //   })
+  // )
 })
