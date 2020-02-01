@@ -94,19 +94,20 @@ self.addEventListener('fetch',function(event){ // 动态资源缓存
 self.addEventListener('activated',function(e){
   console.log('activated');
   console.log(caches.keys());
-  // e.waitUntil(
-  //   //获取所有cache名称
-  //   caches.keys().then(cacheNames => {
-  //     return Promise.all(
-  //       // 获取所有不同于当前版本名称cache下的内容
-  //       cacheNames.filter(cacheNames => {
-  //         return cacheNames !== cacheStorageKey
-  //       }).map(cacheNames => {
-  //         return caches.delete(cacheNames)
-  //       })
-  //     )
-  //   }).then(() => {
-  //     return self.clients.claim()
-  //   })
-  // )
+  e.waitUntil(
+    //获取所有cache名称
+    caches.keys().then(cacheNames => {
+      console.log('cacheNames', cacheNames);
+      // return Promise.all(
+      //   // 获取所有不同于当前版本名称cache下的内容
+      //   cacheNames.filter(cacheNames => {
+      //     return cacheNames !== cacheStorageKey
+      //   }).map(cacheNames => {
+      //     return caches.delete(cacheNames)
+      //   })
+      // )
+    }).then(() => {
+      // return self.clients.claim()
+    })
+  )
 })
