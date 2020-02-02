@@ -5,7 +5,7 @@ var cacheList=[ // 相对于 origin 的 URL 组成的数组,需要缓存的文�
   'main.css',
   'test.jpg',
   'mainifest.json',
-  'https://unpkg.com/vue',
+  '/js/vue.js',
   'https://huidoo.com.cn:8899/news', // 请求
 ];
 
@@ -91,23 +91,25 @@ self.addEventListener('fetch',function(event){ // 动态资源缓存
   // }
 })
 // pwa 激活
-self.addEventListener('activate',function(e){
-  console.log('activate');
-  console.log(caches.keys());
+// 激活事件的处理函数中，主要操作是清理旧版本的 Service Worker 脚本中使用资源。
+// 激活成功后 Service Worker 可以控制页面了，但是只针对在成功注册了 Service Worker 后打开的页面。
+// 也就是说，页面打开时有没有 Service Worker，决定了接下来页面的生命周期内受不受 Service Worker 控制。
+self.addEventListener('activated',function(e){
+  console.log('activated');
+  // console.log(caches.keys());
   e.waitUntil(
     //获取所有cache名称
     caches.keys().then(cacheNames => {
-      console.log('cacheNames', cacheNames);
-      // return Promise.all(
-      //   // 获取所有不同于当前版本名称cache下的内容
-      //   cacheNames.filter(cacheNames => {
-      //     return cacheNames !== cacheStorageKey
-      //   }).map(cacheNames => {
-      //     return caches.delete(cacheNames)
-      //   })
-      // )
+      return Promise.all(
+        // 获取所有不同于当前版本名称cache下的内容
+        cacheNames.filter(cacheNames => {
+          return cacheNames !== cacheStorageKey
+        }).map(cacheNames => {
+          return caches.delete(cacheNames)
+        })
+      )
     }).then(() => {
-      // return self.clients.claim()
+      return self.clients.claim()
     })
   )
 })
