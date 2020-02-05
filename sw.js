@@ -15,7 +15,7 @@ var cacheList=[ // 相对于 origin 的 URL 组成的数组,需要缓存的文�
   'mainifest.json',
   '/js/vue.js',
   '/js/ui.js',
-  '/images/iu.jpeg'
+  // '/images/iu.jpeg'
 ];
 /**
  * CacheStorage 和 cache
@@ -135,13 +135,13 @@ self.addEventListener('fetch',function(event){ // 动态资源缓存
     //   })
     // )
   } else {
-    if (event.request.url.endsWith('test.jpg')) {
-      console.log('拦截到test文件,替换成我想要的文件');
-      event.respondWith(
-        caches.match('/images/iu.jpeg')
-      )
-      return;
-    }
+    // if (event.request.url.endsWith('test.jpg')) {
+    //   console.log('拦截到test文件,替换成我想要的文件');
+    //   event.respondWith(
+    //     caches.match('test.jpeg')
+    //   )
+    //   return;
+    // }
     console.log('静态文件请求', event.request.url);
     if(!(event.request.url.indexOf('http') === 0)) return;
     event.respondWith(
