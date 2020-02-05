@@ -1,20 +1,16 @@
 {
-  "name": "PWA示例",	//显示名称
+  "name": "PWA示例",
   "display": "standalone",
-  "short_name": "PWA示例",  //在APP launcher和新的tab页面显示，如果没有设置，默认使用name
-  "description": "The app that helps you understand PWA",  //用于描述应用
-  "start_url": "/index.html",  // 应用启动时的URL
+  "short_name": "PWA示例",
+  "description": "The app that helps you understand PWA",
+  "start_url": "/index.html",
   "background_color": "#fff",
   "theme_color": "#3eaf7c",
-  "icons": [    // 桌面图标，是一个数组
+  "icons": [
     {
-      "src": "/test.jpg",
-      "sizes": "48x48",
+      "src": "/icon.jpg",
+      "sizes": "144x144",
       "type": "image/png"
-    },
-    {
-      "src": "/youhun.ico",
-      "sizes": "48x48"
     }
   ]
 }
