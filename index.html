@@ -5,14 +5,16 @@
   <title>Hello PWA</title>
   <meta name="viewport" content="width=device-width, user-scalable=no, initial-scale=1.0, maximum-scale=1.0, minimum-scale=1.0">
   <link rel="stylesheet" href="main.css">
-  <link rel="manifest" href="mainifest.json">
+  <link rel="manifest" href="./mainifest.json">
   <link rel="icon" href="icon.png" type="image/png" />
   <script type="text/javascript" src="js/vue.js"></script>
+  <script src="./js/ui.js"></script>
+  <link rel="stylesheet" href="./css/ui.css">
 </head>
 <body>
   <div id="app">
     <h3>{{title}}</h3>
-    <img src="test.jpg" alt="">
+    <img src="test.jpg" alt="" class="test">
     <ul>
       <li v-for="(item,index) in list" :key="index">{{item.title}}</li>
     </ul>
@@ -30,8 +32,22 @@
       console.log('fail')
     });
   }
+
+  window.addEventListener('load', function() {
+    // 当页面的控制权发生变化的时候走这里
+    navigator.serviceWorker.oncontrollerchange = function() {
+      ui.showTips('页面已更新');
+    }
+    if (!window.navigator.onLine) {
+      ui.showTips('你断网了，可能数据没更新', 'warn');
+    }
+    window.addEventListener('online', function() {
+      ui.showTips('重新连接网络，刷新加载最新数据');
+    })
+  });
 </script>
 <script>
+  Vue.config.productionTip = false;
   new Vue({
     el: '#app',
     data: {

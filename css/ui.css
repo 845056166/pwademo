@@ -1,0 +1,21 @@
+.tips {
+    text-align: center;
+    width: 80%;
+    color: #FFF;
+    position: absolute;
+    bottom: 20px;
+    left: 50%;
+    transform: translateX(-50%);
+}
+.text{
+    padding: 10px 0;
+}
+.text.warn {
+  background: red;
+}
+.text.info {
+  background: green;
+}
+.hide {
+  display: none;
+}
