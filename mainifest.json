@@ -3,7 +3,7 @@
   "display": "standalone",
   "short_name": "PWA示例",
   "description": "The app that helps you understand PWA",
-  "start_url": "/",
+  "start_url": "/pwademo/index.html",
   "background_color": "#fff",
   "theme_color": "#3eaf7c",
   "icons": [
