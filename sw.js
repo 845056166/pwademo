@@ -1,5 +1,6 @@
 // importScripts("https://storage.googleapis.com/workbox-cdn/releases/3.1.0/workbox-sw.js");
 
+importScripts('./js/dexie.js')
 // 第一次就会缓存静态资源
 // 还有一个请求需要等到刷新页面之后才能缓存
 // fetch事件需要等到安装完成之后，激活的时候才会触发
@@ -15,6 +16,7 @@ var cacheList=[ // 相对于 origin 的 URL 组成的数组,需要缓存的文�
   'mainifest.json',
   '/js/vue.js',
   '/js/ui.js',
+  '/js/dexie.js'
   // '/images/iu.jpeg'
 ];
 /**
@@ -55,6 +57,54 @@ self.addEventListener('install',e => {  // install 事件，它发生在浏览�
   // 直接跳过等待 进入activated
   // e.waitUntil(self.skipWaiting());
 });
+
+self.addEventListener('push', function (e) {
+  var data = e.data;
+  if (e.data) {
+    data = data.json();
+    console.log('push的数据为：', data);
+    var title = 'PWA即学即用';
+    var options = {
+        body: data,
+        icon: '/img/icons/book-128.png',
+        image: '/img/icons/book-521.png', // no effect
+        actions: [{
+            action: 'show-book',
+            title: '去看看'
+        }, {
+            action: 'contact-me',
+            title: '联系我'
+        }],
+        tag: 'pwa-starter',
+        renotify: true
+    };
+    self.registration.showNotification(title, options);
+  }
+  else {
+    console.log('push没有任何数据');
+  }
+});
+
+// sw.js
+self.addEventListener('notificationclick', function (e) {
+  var action = e.action;
+  console.log(`action tag: ${e.notification.tag}`, `action: ${action}`);
+  
+  switch (action) {
+      case 'show-book':
+          console.log('show-book');
+          break;
+      case 'contact-me':
+          console.log('contact-me');
+          break;
+      default:
+          console.log(`未处理的action: ${e.action}`);
+          action = 'default';
+          break;
+  }
+  e.notification.close();
+});
+
 
 /**********  至此安装完成  *************/
 
@@ -99,42 +149,205 @@ function fetchAndCache(req) {
     })
   })
 }
+/**
+  * Serializes a Request into a plain JS object.
+  *
+  * @param request
+  * @returns Promise
+  */
+ function serializeRequest(request) {
+  var serialized = {
+    url: request.url,
+    headers: serializeHeaders(request.headers),
+    method: request.method,
+    mode: request.mode,
+    credentials: request.credentials,
+    cache: request.cache,
+    redirect: request.redirect,
+    referrer: request.referrer
+  };
+  console.log('serializeRequest....', serialized);
+  // Only if method is not `GET` or `HEAD` is the request allowed to have body.
+  if (request.method !== 'GET' && request.method !== 'HEAD') {
+    request.clone().text().then(function(body) {
+        serialized.body = body;
+        return serialized;
+        // return Promise.resolve(serialized);
+    });
+  }
+  return serialized;
+  // return Promise.resolve(serialized);
+}
+/**
+* Serializes a Response into a plain JS object
+*
+* @param response
+* @returns Promise
+*/
+function serializeResponse(response) {
+  var serialized = {
+    headers: serializeHeaders(response.headers),
+    status: response.status,
+    statusText: response.statusText
+  };
+  console.log('serializeResponse', response);
+  return response.clone().text().then(function(body) {
+    serialized.body = body;
+    return Promise.resolve(serialized);
+  });
+}
+ 
+/**
+* Serializes headers into a plain JS object
+*
+* @param headers
+* @returns object
+*/
+function serializeHeaders(headers) {
+  var serialized = {};
+    // `for(... of ...)` is ES6 notation but current browsers supporting SW, support this
+    // notation as well and this is the only way of retrieving all the headers.
+  for (var entry of headers.entries()) {
+    serialized[entry[0]] = entry[1];
+  }
+  return serialized;
+}
+ 
+/**
+* Creates a Response from it's serialized version
+*
+* @param data
+* @returns Promise
+*/
+function deserializeResponse(data) {
+  return Promise.resolve(new Response(data.body, data));
+}
+ 
+/**
+* Saves the response for the given request eventually overriding the previous version
+*
+* @param data
+* @returns Promise
+*/
+function cachePut(request, response, store) {
+  var key, data;
+  getPostId(request.clone())
+    .then(function(id){
+    key = id;
+    return serializeResponse(response.clone());
+  }).then(function(serializedResponse) {
+    data = serializedResponse;
+    var entry = {
+      key: key,
+      response: data,
+      timestamp: Date.now()
+    };
+    store
+    .add(entry)
+    .catch(function(error){
+      store.update(entry.key, entry);
+    });
+  });
+}
+ 
+/**
+* Returns the cached response for the given request or an empty 503-response for a cache miss.
+*
+* @param request
+* @return Promise
+*/
+function cacheMatch(request, store) {
+  return getPostId(request.clone())
+    .then(function(id) {
+    return store.get(id);
+  }).then(function(data){
+    if (data) {
+      return deserializeResponse(data.response);
+    } else {
+      return new Response('', {status: 503, statusText: 'Service Unavailable'});
+    }
+  });
+}
+ 
+/**
+* Returns a string identifier for our POST request.
+*
+* @param request
+* @return string
+*/
+ 
+function getPostId(request) {
+  return new Promise((resolve, reject) => {
+    console.log('getPostId', JSON.stringify(serializeRequest(request.clone())));
+    resolve(JSON.stringify(serializeRequest(request.clone())));
+  });
+ }
 
 // on install 的优点是第二次访问即可离线，缺点是需要将需要缓存的 URL 在编译时插入到脚本中，增加代码量和降低可维护性；
 // on fetch 的优点是无需更改编译过程，也不会产生额外的流量，缺点是需要多一次访问才能离线可用。
 // 第一次并不会走这里,不会fetch ，只有安装成功后才能拦截fetch
 self.addEventListener('fetch',function(event){ // 动态资源缓存
-  if(event.request.url.endsWith('news')) { // 专门拦截接口
-    console.log('拦截到请求的接口', event.request.url);
-    // 接口数据应该保持最新，先请求，如果请求不到就用缓存里边的
-    event.respondWith(
-      fetchAndCache(event.request)
-    );
-    // event.respondWith(
-    //   caches.match(event.request).then((response) => {
-    //     if (response) {
-    //       return response;
-    //     }
-    //     // 如果 service worker 没有返回，那就得直接请求真实远程服务
-    //     var request = event.request.clone(); // 把原始请求拷过来
-    //     return fetch(request.url).then(function (httpRes) {
-    //         // http请求的返回已被抓到，可以处置了。
-    //         // 请求失败了，直接返回失败的结果就好了。。
-    //         if (!httpRes || httpRes.status !== 200) {
-    //           return httpRes;
-    //         }
-    //         // 请求成功的话，将请求缓存起来。
-    //         var responseClone = httpRes.clone();
-    //         caches.open(apiCache).then(function (cache) {
-    //           // 当请求的是http，这个方法会报错
-    //           cache.put(event.request, responseClone);
-    //         });
+  // Listen to fetch requests
+  // We will cache all POST requests, but in the real world, you will probably filter for
+  // specific URLs like if(... || event.request.url.href.match(...))
+  if (event.request.method === "POST") {
+      // Init the cache. We use Dexie here to simplify the code. You can use any other
+      // way to access IndexedDB of course.
+      // console.log('拦截到post请求.......');
+      var db = new Dexie("post_cache");
+      db.version(1).stores({
+        post_cache: 'key,response,timestamp'
+      })
+      event.respondWith(
+          // First try to fetch the request from the server
+          fetch(event.request.clone())
+          .then(function(response) {
+          // If it works, put the response into IndexedDB
+              cachePut(event.request.clone(), response.clone(), db.post_cache);
+              return response;
+          })
+          .catch(function() {
+              // If it does not work, return the cached response. If the cache does not
+              // contain a response for our request, it will give us a 503-response
+              console.log();
+              
+              return cacheMatch(event.request.clone(), db.post_cache);
+          })
+      );
+  }
 
-    //         return httpRes;
-    //     });
-    //   })
-    // )
-  } else {
+  // if(event.request.url.endsWith('news')) { // 专门拦截接口
+  //   // console.log('拦截到请求的接口', event.request.url);
+  //   // 接口数据应该保持最新，先请求，如果请求不到就用缓存里边的
+  //   event.respondWith(
+  //     fetchAndCache(event.request)
+  //   );
+  //   // event.respondWith(
+  //   //   caches.match(event.request).then((response) => {
+  //   //     if (response) {
+  //   //       return response;
+  //   //     }
+  //   //     // 如果 service worker 没有返回，那就得直接请求真实远程服务
+  //   //     var request = event.request.clone(); // 把原始请求拷过来
+  //   //     return fetch(request.url).then(function (httpRes) {
+  //   //         // http请求的返回已被抓到，可以处置了。
+  //   //         // 请求失败了，直接返回失败的结果就好了。。
+  //   //         if (!httpRes || httpRes.status !== 200) {
+  //   //           return httpRes;
+  //   //         }
+  //   //         // 请求成功的话，将请求缓存起来。
+  //   //         var responseClone = httpRes.clone();
+  //   //         caches.open(apiCache).then(function (cache) {
+  //   //           // 当请求的是http，这个方法会报错
+  //   //           cache.put(event.request, responseClone);
+  //   //         });
+
+  //   //         return httpRes;
+  //   //     });
+  //   //   })
+  //   // )
+  // } 
+  else {
     // if (event.request.url.endsWith('test.jpg')) {
     //   console.log('拦截到test文件,替换成我想要的文件');
     //   event.respondWith(

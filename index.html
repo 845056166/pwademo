@@ -26,19 +26,101 @@
     <ul>
       <li v-for="(item,index) in list" :key="index">{{item.title}}</li>
     </ul>
+    <ul>
+      <li v-for="(item, index) in article" :key="'article'+index" v-html="item.arTitle"></li>
+    </ul>
+    <input type="text" placeholder="想推送什么？" v-model="msg">
+    <button @click="subscribe">订阅推送</button>
   </div>
 </body>
 <script src="./index.js"></script>
 <script>
+
+  // 获取Notification权限
+  Notification.requestPermission()
+  // .then(function(result) {
+  //   if(result === 'granted') {
+  //     randomNotification();
+  //   }
+  // });
+  // navigator.serviceWorker.ready.then(function (registration) {
+  //   registration.pushManager.getSubscription().then(function (pushSubscription) {
+  //     if (!pushSubscription) {
+  //       // 用户尚未订阅
+  //       return;
+  //     }
+  //     // 取消订阅
+  //     return pushSubscription.unsubscribe();
+  //   })
+  //     .then(function () {
+  //       console.log('取消订阅！')
+  //     })
+  // });
+  const ua = navigator.userAgent;
+  const isiOS = !!ua.match(/\(i[^;]+;( U;)? CPU.+Mac OS X/); //ios终端
+
+  console.log('isiOS', isiOS);
+  function subscribeUserToPush(registration, publicKey) {
+    var subscribeOptions = {
+      userVisibleOnly: true,
+      applicationServerKey: window.urlBase64ToUint8Array(publicKey)
+    };
+    return registration.pushManager.subscribe(subscribeOptions).then(function (pushSubscription) {
+      // console.log('Received PushSubscription: ', JSON.stringify(pushSubscription));
+      return JSON.stringify(pushSubscription);
+    });
+  }
+
+window.urlBase64ToUint8Array = function (base64String) {
+  const padding = '='.repeat((4 - base64String.length % 4) % 4);
+  const base64 = (base64String + padding)
+    .replace(/\-/g, '+')
+    .replace(/_/g, '/');
+
+  const rawData = window.atob(base64);
+  const outputArray = new Uint8Array(rawData.length);
+
+  for (let i = 0; i < rawData.length; ++i) {
+    outputArray[i] = rawData.charCodeAt(i);
+  }
+  return outputArray;
+}
   // 检测浏览器是否支持SW
   if(navigator.serviceWorker != null){
     navigator.serviceWorker.register('sw.js')
     .then(function(registartion){
     //注册成功
       console.log('注册成功:',registartion.scope)
+      const publicKey = 'BNe-R1-gkl19pLJmosaLGo7Gn5u4TYMJhZ_tFdvaLTOkUYQ6zGp8usYF4rCLxtw3qSsbfJY1ny_7mx25RMxiOvo';
+      
+      return subscribeUserToPush(registartion, publicKey);
+      // registartion.pushManager.subscribe({userVisibleOnly: true}).then((subscription) => {
+      //   console.log('subscription', subscription);
+
+      //   var key = subscription.getKey('p256dh');
+      //   console.log(key);
+        
+      //   // updateStatus(endpoint, key, 'subscribe');
+      // })
+    })
+    .then((subscription) => {
+      // var body = {subscription};
+      let param = JSON.parse(subscription);
+      Object.assign(param, { uniqueid: new Date().getTime() })
+      // 为了方便之后的推送，为每个客户端简单生成一个标识
+      // param.uniqueid = new Date().getTime();
+      console.log(param);
+      // param = { uniqueid:  new Date().getTime() }
+      // 将生成的客户端订阅信息存储在自己的服务器上
+      return sendSubscriptionToServer(JSON.stringify(param));
     }).catch(function (err){
       console.log('fail')
     });
+  }
+
+  sendSubscriptionToServer = (body) => {
+    // console.log('body', body);
+    return sendSubscription('https://huidoo.com.cn:8899/subscribe', body)
   }
 
   window.addEventListener('load', function() {
@@ -61,6 +143,8 @@
     data: {
       title: 'Hello',
       list: [],
+      article: [],
+      msg: '',
     },
     mounted() {
       getNews().then((res) => {
@@ -68,6 +152,18 @@
         this.title = title;
         this.list = list;
       })
+      queryMessage().then((res) => {
+        // console.log(res);
+        this.article = res[0].data;
+      })
+    },
+    methods: {
+      subscribe() {
+        // sendSubscription('http://localhost:9090/subscribe', { payload: this.msg })
+        pushMsg('https://huidoo.com.cn:8899/push', { payload: this.msg }).then((res) => {
+          console.log(res);
+        })
+      }
     }
   })
   
