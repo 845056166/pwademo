@@ -35,12 +35,12 @@
 </body>
 <script src="./index.js"></script>
 <script>
-
   // 获取Notification权限
-  Notification.requestPermission()
+  // Notification.requestPermission()
   // .then(function(result) {
-  //   if(result === 'granted') {
-  //     randomNotification();
+  //   console.log('requestPermission', result);
+  //   if (result === 'granted') {
+  //     // randomNotification();
   //   }
   // });
   // navigator.serviceWorker.ready.then(function (registration) {
@@ -56,19 +56,22 @@
   //       console.log('取消订阅！')
   //     })
   // });
+  // const origin = 'https://huidoo.com.cn:8899';
+  const origin = 'http://localhost:9090';
+  const getSubscription = (registration) => {
+    return registration.pushManager.getSubscription();
+  }
+
   const ua = navigator.userAgent;
   const isiOS = !!ua.match(/\(i[^;]+;( U;)? CPU.+Mac OS X/); //ios终端
-
-  console.log('isiOS', isiOS);
+  let myPublicKey = '';
+  let myPrivateKey = '';
   function subscribeUserToPush(registration, publicKey) {
     var subscribeOptions = {
       userVisibleOnly: true,
       applicationServerKey: window.urlBase64ToUint8Array(publicKey)
     };
-    return registration.pushManager.subscribe(subscribeOptions).then(function (pushSubscription) {
-      // console.log('Received PushSubscription: ', JSON.stringify(pushSubscription));
-      return JSON.stringify(pushSubscription);
-    });
+    return registration.pushManager.subscribe(subscribeOptions)
   }
 
 window.urlBase64ToUint8Array = function (base64String) {
@@ -89,38 +92,54 @@ window.urlBase64ToUint8Array = function (base64String) {
   if(navigator.serviceWorker != null){
     navigator.serviceWorker.register('sw.js')
     .then(function(registartion){
-    //注册成功
-      console.log('注册成功:',registartion.scope)
-      const publicKey = 'BNe-R1-gkl19pLJmosaLGo7Gn5u4TYMJhZ_tFdvaLTOkUYQ6zGp8usYF4rCLxtw3qSsbfJY1ny_7mx25RMxiOvo';
-      
-      return subscribeUserToPush(registartion, publicKey);
-      // registartion.pushManager.subscribe({userVisibleOnly: true}).then((subscription) => {
-      //   console.log('subscription', subscription);
-
-      //   var key = subscription.getKey('p256dh');
-      //   console.log(key);
-        
-      //   // updateStatus(endpoint, key, 'subscribe');
-      // })
+      //注册成功
+      console.log('注册成功:',registartion.scope);
+      return Notification.requestPermission().then((result) => {
+        if (result === 'granted') { // 如果有通知权限
+          return getSubscription(registartion).then((pushSubscription) => {
+          // console.log(pushSubscription);
+            if (!pushSubscription) {
+              // 用户尚未订阅就订阅
+              return fetch(`${origin}/getKey`).then(res => res.json()).then(res => {
+                // console.log('getKey', res);
+                const { publicKey, privateKey } = res;
+                myPublicKey = publicKey;
+                myPrivateKey = privateKey;
+                console.log('getpublicKey', publicKey);
+                // 订阅成功了，就保存订阅信息至服务器
+                return subscribeUserToPush(registartion, publicKey);
+              })
+            }
+            // 取消订阅
+            // return pushSubscription.unsubscribe();
+          })
+        }
+      })
     })
-    .then((subscription) => {
+    .then((subscription, keys) => {
+      console.log('push Server 订阅成功');
       // var body = {subscription};
-      let param = JSON.parse(subscription);
-      Object.assign(param, { uniqueid: new Date().getTime() })
-      // 为了方便之后的推送，为每个客户端简单生成一个标识
-      // param.uniqueid = new Date().getTime();
-      console.log(param);
-      // param = { uniqueid:  new Date().getTime() }
-      // 将生成的客户端订阅信息存储在自己的服务器上
-      return sendSubscriptionToServer(JSON.stringify(param));
+      // const { publicKey, privateKey } = keys;
+      if (subscription) {
+        let param = JSON.parse(JSON.stringify(subscription));
+        Object.assign(param, { uniqueid: new Date().getTime(), publicKey: myPublicKey, privateKey: myPrivateKey })
+        // 为了方便之后的推送，为每个客户端简单生成一个标识
+        // param.uniqueid = new Date().getTime();
+        // console.log(param);
+        // param = { uniqueid:  new Date().getTime() }
+        // 将生成的客户端订阅信息存储在自己的服务器上
+        console.log('开始保存订阅信息至个人服务器');
+        return sendSubscriptionToServer(JSON.stringify(param));
+      }
+    }).then((res) => {
+      console.log('个人服务器返回的信息', res);
     }).catch(function (err){
-      console.log('fail')
+      console.log('fail', err)
     });
   }
-
   sendSubscriptionToServer = (body) => {
-    // console.log('body', body);
-    return sendSubscription('https://huidoo.com.cn:8899/subscribe', body)
+    console.log('即将发送订阅信息给个人服务器', body);
+    return sendSubscription(origin+'/subscribe', body)
   }
 
   window.addEventListener('load', function() {
@@ -160,7 +179,7 @@ window.urlBase64ToUint8Array = function (base64String) {
     methods: {
       subscribe() {
         // sendSubscription('http://localhost:9090/subscribe', { payload: this.msg })
-        pushMsg('https://huidoo.com.cn:8899/push', { payload: this.msg }).then((res) => {
+        pushMsg(origin+'/push', { payload: this.msg }).then((res) => {
           console.log(res);
         })
       }

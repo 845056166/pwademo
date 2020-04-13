@@ -61,8 +61,7 @@ window.sendSubscription = (url, param) => {
     cache: "force-cache",
     body: param,
   };
-  
-  fetch(url, requestConfig)
+  return fetch(url, requestConfig)
 }
 
 window.pushMsg = (url, param) => {

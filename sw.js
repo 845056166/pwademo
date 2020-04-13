@@ -63,11 +63,10 @@ self.addEventListener('push', function (e) {
   if (e.data) {
     data = data.json();
     console.log('push的数据为：', data);
-    var title = 'PWA即学即用';
+    var title = '小右想你了～';
     var options = {
         body: data,
-        icon: '/img/icons/book-128.png',
-        image: '/img/icons/book-521.png', // no effect
+        image: './images/iu.jpeg',
         actions: [{
             action: 'show-book',
             title: '去看看'
